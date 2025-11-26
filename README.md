@@ -1,5 +1,7 @@
 # OVU WebUser - Enterprise Next.js Application
 
+User/customer booking portal where travelers can search, book, and manage trips.
+
 A modern, enterprise-level Next.js application built with TypeScript, Tailwind CSS, and industry best practices.
 
 ## Features

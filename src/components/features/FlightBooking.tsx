@@ -135,9 +135,16 @@ export function FlightBooking() {
 
       // Navigate to payment page
       router.push('/payment');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Booking failed:', error);
-      toast.error('Failed to create booking. Please try again.');
+      const errorMessage = error.response?.data?.detail || error.response?.data?.error || 'Failed to create booking. Please try again.';
+      
+      // Check if it's an auth error
+      if (error.response?.status === 401) {
+        toast.error('Session expired. Please login again to continue.');
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       setIsSubmitting(false);
     }

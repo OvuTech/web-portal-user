@@ -244,9 +244,16 @@ export function RoadBooking() {
       // Store booking data and show payment section
       setBookingData(booking);
       setShowPayment(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Booking failed:', error);
-      toast.error('Failed to create booking. Please try again.');
+      const errorMessage = error.response?.data?.detail || error.response?.data?.error || 'Failed to create booking. Please try again.';
+      
+      // Check if it's an auth error
+      if (error.response?.status === 401) {
+        toast.error('Session expired. Please login again to continue.');
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -264,9 +271,15 @@ export function RoadBooking() {
       if (response.authorization_url) {
         window.location.href = response.authorization_url;
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Payment initialization failed:', error);
-      toast.error('Failed to initialize payment. Please try again.');
+      const errorMessage = error.response?.data?.detail || error.response?.data?.error || 'Failed to initialize payment. Please try again.';
+      
+      if (error.response?.status === 401) {
+        toast.error('Session expired. Please login again to continue.');
+      } else {
+        toast.error(errorMessage);
+      }
     }
   };
 

@@ -23,12 +23,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const checkAuth = async () => {
       try {
         if (authService.isAuthenticated()) {
+          console.log('[AuthContext] Checking auth on mount, token exists');
           const currentUser = await authService.getCurrentUser();
           setUser(currentUser);
+          console.log('[AuthContext] User verified:', currentUser.email);
+        } else {
+          console.log('[AuthContext] No token found on mount');
         }
-      } catch (error) {
-        console.error('Failed to get current user:', error);
-        authService.clearTokens();
+      } catch (error: any) {
+        console.error('[AuthContext] Failed to get current user:', error);
+
+        // Only clear tokens if we get a 401 Unauthorized error
+        // Don't clear on network errors or other issues
+        if (error.response?.status === 401) {
+          console.warn('[AuthContext] Token invalid (401), clearing tokens');
+          authService.clearTokens();
+          setUser(null);
+        } else {
+          console.warn('[AuthContext] Auth check failed but keeping tokens (may be network issue)');
+        }
       } finally {
         setIsLoading(false);
       }

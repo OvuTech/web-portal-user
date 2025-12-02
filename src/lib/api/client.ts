@@ -44,15 +44,25 @@ class ApiClient {
     this.client.interceptors.response.use(
       (response) => response,
       async (error) => {
+        const url = error.config?.url || '';
+        
         // Handle common error responses
         if (error.response?.status === 401) {
-          // Handle unauthorized access
-          this.handleUnauthorized();
+          console.warn('[API Client] 401 Unauthorized for:', url);
+          
+          // Only clear tokens for non-auth endpoints
+          // Auth endpoints (login, register) returning 401 means wrong credentials, not token issue
+          // /auth/me returning 401 means token is invalid - let AuthContext handle this
+          if (!url.includes('/auth/')) {
+            console.warn('[API Client] Token may be expired for protected endpoint');
+            // Don't clear tokens here - let the AuthContext handle it
+            // This prevents race conditions and allows for proper error handling
+          }
         }
 
         if (error.response?.status === 403) {
           // Handle forbidden access
-          console.error('Access forbidden');
+          console.error('[API Client] Access forbidden:', url);
         }
 
         return Promise.reject(error);
@@ -63,19 +73,13 @@ class ApiClient {
   private getAuthToken(): string | null {
     // Get access token from localStorage
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('access_token');
+      const token = localStorage.getItem('access_token');
+      if (token) {
+        console.log('[API Client] Token found in localStorage');
+      }
+      return token;
     }
     return null;
-  }
-
-  private handleUnauthorized() {
-    // Clear tokens on unauthorized access
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      // Optionally reload the page to reset auth state
-      // User will need to click login button in header to re-authenticate
-    }
   }
 
   public async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {

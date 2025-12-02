@@ -11,7 +11,7 @@ const getApiUrl = () => {
     return '/api'; // Use Next.js API routes as proxy
   }
   // In development, call API directly
-  return process.env.NEXT_PUBLIC_API_URL || 'https://ovu-transport-staging.fly.dev/api/v1';
+  return process.env.NEXT_PUBLIC_API_URL || '';
 };
 
 export const env = {

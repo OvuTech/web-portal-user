@@ -96,9 +96,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    // Clear auth tokens
     authService.clearTokens();
     setUser(null);
-    // Stay on current page - user can click login in header to re-authenticate
+    
+    // Clear all session data
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('currentBooking');
+      sessionStorage.removeItem('selectedRoute');
+      sessionStorage.removeItem('selectedSeats');
+      sessionStorage.removeItem('bookingPassengers');
+      sessionStorage.removeItem('searchParams');
+      
+      // Redirect to home page
+      window.location.href = '/';
+    }
   };
 
   const value: AuthContextType = {

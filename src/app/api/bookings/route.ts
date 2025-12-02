@@ -7,12 +7,18 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const token = request.headers.get('Authorization');
 
+    // Log for debugging
+    console.log('[Booking Proxy] Token present:', !!token);
+    console.log('[Booking Proxy] Request to:', `${API_URL}/bookings`);
+
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
     };
 
     if (token) {
       headers['Authorization'] = token;
+    } else {
+      console.error('[Booking Proxy] No authorization token provided');
     }
 
     const response = await fetch(`${API_URL}/bookings`, {
@@ -23,9 +29,14 @@ export async function POST(request: NextRequest) {
 
     const data = await response.json();
 
+    console.log('[Booking Proxy] Response status:', response.status);
+    if (!response.ok) {
+      console.error('[Booking Proxy] Error response:', data);
+    }
+
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error('Create booking proxy error:', error);
+    console.error('[Booking Proxy] Error:', error);
     return NextResponse.json(
       { error: 'Failed to create booking' },
       { status: 500 }

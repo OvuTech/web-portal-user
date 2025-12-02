@@ -29,6 +29,9 @@ class ApiClient {
         const token = this.getAuthToken();
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
+          console.log('[API Client] Token added to request:', config.url);
+        } else {
+          console.warn('[API Client] No token available for request:', config.url);
         }
         return config;
       },

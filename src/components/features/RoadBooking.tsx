@@ -7,6 +7,7 @@ import { User } from 'lucide-react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useSession } from '@/contexts/SessionContext';
 import { SeatSelection } from './SeatSelection';
 import { bookingService } from '@/lib/api/bookings';
 import { useAuth } from '@/contexts/AuthContext';
@@ -28,6 +29,7 @@ interface PassengerData {
 export function RoadBooking() {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
+  const { showSessionExpired } = useSession();
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [showSeatSelection, setShowSeatSelection] = useState(true);
   const [selectedSeats, setSelectedSeats] = useState<number[]>([]);
@@ -248,9 +250,9 @@ export function RoadBooking() {
       console.error('Booking failed:', error);
       const errorMessage = error.response?.data?.detail || error.response?.data?.error || 'Failed to create booking. Please try again.';
       
-      // Check if it's an auth error
-      if (error.response?.status === 401) {
-        toast.error('Session expired. Please login again to continue.');
+      // Check if it's a session/auth error - show session expired modal
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        showSessionExpired();
       } else {
         toast.error(errorMessage);
       }
@@ -275,8 +277,8 @@ export function RoadBooking() {
       console.error('Payment initialization failed:', error);
       const errorMessage = error.response?.data?.detail || error.response?.data?.error || 'Failed to initialize payment. Please try again.';
       
-      if (error.response?.status === 401) {
-        toast.error('Session expired. Please login again to continue.');
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        showSessionExpired();
       } else {
         toast.error(errorMessage);
       }

@@ -7,6 +7,7 @@ import { Plane } from 'lucide-react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useSession } from '@/contexts/SessionContext';
 import { bookingService } from '@/lib/api/bookings';
 import { useAuth } from '@/contexts/AuthContext';
 import type { CreateBookingRequest } from '@/lib/api/types';
@@ -20,6 +21,7 @@ interface PassengerData {
 export function FlightBooking() {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
+  const { showSessionExpired } = useSession();
   const [whatsappEnabled, setWhatsappEnabled] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -139,9 +141,9 @@ export function FlightBooking() {
       console.error('Booking failed:', error);
       const errorMessage = error.response?.data?.detail || error.response?.data?.error || 'Failed to create booking. Please try again.';
       
-      // Check if it's an auth error
-      if (error.response?.status === 401) {
-        toast.error('Session expired. Please login again to continue.');
+      // Check if it's a session/auth error - show session expired modal
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        showSessionExpired();
       } else {
         toast.error(errorMessage);
       }

@@ -6,7 +6,9 @@ import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Input } from '@/components/ui/input';
+import { DateTimePicker } from '@/components/ui/datetime-picker';
+import { bookingService } from '@/lib/api/bookings';
+import type { SearchRequest, TransportType } from '@/lib/api/types';
 
 type TripType = 'flight' | 'road';
 type FlightType = 'one-way' | 'round-trip';
@@ -15,9 +17,76 @@ export function SearchForm() {
   const router = useRouter();
   const [tripType, setTripType] = useState<TripType>('flight');
   const [flightType, setFlightType] = useState<FlightType>('one-way');
+  const [isSearching, setIsSearching] = useState(false);
 
-  const handleSearch = () => {
-    router.push('/search-flights');
+  // Form state
+  const [origin, setOrigin] = useState('lagos');
+  const [destination, setDestination] = useState('abuja');
+  const [departureDateTime, setDepartureDateTime] = useState<Date>(new Date('2025-03-20T08:00:00'));
+  const [returnDateTime, setReturnDateTime] = useState<Date>(new Date('2025-03-22T18:00:00'));
+  const [travellers, setTravellers] = useState('2');
+
+  const handleTripTypeChange = (type: TripType) => {
+    // If user is on a search results page and switches transport type, go to homepage
+    if (typeof window !== 'undefined' && (window.location.pathname.includes('search-') || window.location.pathname.includes('book-'))) {
+      router.push('/');
+    } else {
+      setTripType(type);
+    }
+  };
+
+  const handleSearch = async () => {
+    setIsSearching(true);
+
+    try {
+      // Map transport type
+      const transportType: TransportType = tripType === 'flight' ? 'flight' : 'bus';
+
+      // Format dates to ISO datetime string
+      const departureDatetime = departureDateTime.toISOString().slice(0, 19);
+      const returnDatetime = flightType === 'round-trip' ? returnDateTime.toISOString().slice(0, 19) : undefined;
+
+      // Build search request
+      const searchRequest: SearchRequest = {
+        origin: origin,
+        destination: destination,
+        departure_date: departureDatetime,
+        passengers: parseInt(travellers),
+        transport_types: [transportType],
+      };
+
+      // Add return date for round trips
+      if (returnDatetime) {
+        searchRequest.return_date = returnDatetime;
+      }
+
+      // Add seat type for flights
+      if (tripType === 'flight') {
+        searchRequest.seat_type = 'economy'; // Could make this dynamic based on user selection
+      }
+
+      // Call API
+      const response = await bookingService.search(searchRequest);
+
+      // Store results in sessionStorage to pass to results page
+      sessionStorage.setItem('searchResults', JSON.stringify(response));
+      sessionStorage.setItem('searchParams', JSON.stringify(searchRequest));
+
+      // Store search start time for timer
+      sessionStorage.setItem('searchStartTime', Date.now().toString());
+
+      // Navigate to results page
+      if (tripType === 'flight') {
+        router.push('/search-flights');
+      } else {
+        router.push('/search-road');
+      }
+    } catch (error) {
+      console.error('Search failed:', error);
+      alert('Search failed. Please try again.');
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   // Calculate number of columns based on trip type and flight type
@@ -40,9 +109,9 @@ export function SearchForm() {
       <div className="relative z-10 -mb-4 flex justify-center">
         <div className="flex rounded-[12px] bg-white shadow-md">
           <button
-            onClick={() => setTripType('flight')}
+            onClick={() => handleTripTypeChange('flight')}
             className={cn(
-              'relative px-6 py-3 text-sm font-medium transition-colors md:px-8 md:text-base',
+              'relative cursor-pointer px-6 py-3 text-sm font-medium transition-colors md:px-8 md:text-base',
               tripType === 'flight'
                 ? 'text-gray-900 after:absolute after:left-1/2 after:top-0 after:h-1 after:w-12 after:-translate-x-1/2 after:bg-yellow-400'
                 : 'text-gray-500 hover:text-gray-700'
@@ -51,9 +120,9 @@ export function SearchForm() {
             Flight
           </button>
           <button
-            onClick={() => setTripType('road')}
+            onClick={() => handleTripTypeChange('road')}
             className={cn(
-              'relative px-6 py-3 text-sm font-medium transition-colors md:px-8 md:text-base',
+              'relative cursor-pointer px-6 py-3 text-sm font-medium transition-colors md:px-8 md:text-base',
               tripType === 'road'
                 ? 'text-gray-900 after:absolute after:left-1/2 after:top-0 after:h-1 after:w-12 after:-translate-x-1/2 after:bg-yellow-400'
                 : 'text-gray-500 hover:text-gray-700'
@@ -94,7 +163,7 @@ export function SearchForm() {
           <div className="flex flex-col">
             <Label className="mb-1.5 text-xs font-medium text-[#111111] md:text-sm">From</Label>
             <div className="relative">
-              <Select defaultValue="lagos">
+              <Select value={origin} onValueChange={setOrigin}>
                 <SelectTrigger className="!h-[60px] w-full rounded-[10px] border border-[#ECECEC] bg-white px-3 pb-4 pt-2 text-xs font-medium text-ovu-primary shadow-none focus:border-ovu-primary focus:outline-none focus:ring-1 focus:ring-ovu-primary md:text-sm">
                   <SelectValue />
                 </SelectTrigger>
@@ -114,7 +183,7 @@ export function SearchForm() {
           <div className="flex flex-col">
             <Label className="mb-1.5 text-xs font-medium text-[#111111] md:text-sm">To</Label>
             <div className="relative">
-              <Select defaultValue="abuja">
+              <Select value={destination} onValueChange={setDestination}>
                 <SelectTrigger className="!h-[60px] w-full rounded-[10px] border border-[#ECECEC] bg-white px-3 pb-4 pt-2 text-xs font-medium text-ovu-primary shadow-none focus:border-ovu-primary focus:outline-none focus:ring-1 focus:ring-ovu-primary md:text-sm">
                   <SelectValue />
                 </SelectTrigger>
@@ -133,28 +202,14 @@ export function SearchForm() {
           {/* Departure */}
           <div className="flex flex-col">
             <Label className="mb-1.5 text-xs font-medium text-[#111111] md:text-sm">Departure</Label>
-            <div className="relative">
-              <Input
-                type="date"
-                defaultValue="2025-03-20"
-                className="!h-[60px] w-full rounded-[10px] border border-[#ECECEC] bg-white px-3 pb-4 pt-2 text-xs font-medium text-ovu-primary shadow-none focus:border-ovu-primary focus:outline-none focus:ring-1 focus:ring-ovu-primary md:text-sm"
-              />
-              <span className="pointer-events-none absolute bottom-2 left-3 text-[10px] text-gray-400">Sunday 2025</span>
-            </div>
+            <DateTimePicker value={departureDateTime} onChange={(date) => date && setDepartureDateTime(date)} placeholder="Select departure date & time" />
           </div>
 
-          {/* Arrival - Only for Round Trip (both Flight and Road) */}
+          {/* Return - Only for Round Trip (both Flight and Road) */}
           {flightType === 'round-trip' && (
             <div className="flex flex-col">
-              <Label className="mb-1.5 text-xs font-medium text-[#111111] md:text-sm">Arrival</Label>
-              <div className="relative">
-                <Input
-                  type="date"
-                  defaultValue="2025-03-22"
-                  className="!h-[60px] w-full rounded-[10px] border border-[#ECECEC] bg-white px-3 pb-4 pt-2 text-xs font-medium text-ovu-primary shadow-none focus:border-ovu-primary focus:outline-none focus:ring-1 focus:ring-ovu-primary md:text-sm"
-                />
-                <span className="pointer-events-none absolute bottom-2 left-3 text-[10px] text-gray-400">Tues 2025</span>
-              </div>
+              <Label className="mb-1.5 text-xs font-medium text-[#111111] md:text-sm">Return</Label>
+              <DateTimePicker value={returnDateTime} onChange={(date) => date && setReturnDateTime(date)} placeholder="Select return date & time" />
             </div>
           )}
 
@@ -182,7 +237,7 @@ export function SearchForm() {
           <div className="flex flex-col">
             <Label className="mb-1.5 text-xs font-medium text-[#111111] md:text-sm">Traveller(s)</Label>
             <div className="relative">
-              <Select defaultValue="2">
+              <Select value={travellers} onValueChange={setTravellers}>
                 <SelectTrigger className="!h-[60px] w-full rounded-[10px] border border-[#ECECEC] bg-white px-3 pb-4 pt-2 text-xs font-medium text-ovu-primary shadow-none focus:border-ovu-primary focus:outline-none focus:ring-1 focus:ring-ovu-primary md:text-sm">
                   <SelectValue />
                 </SelectTrigger>
@@ -193,7 +248,7 @@ export function SearchForm() {
                   <SelectItem value="4">4 Travellers</SelectItem>
                 </SelectContent>
               </Select>
-              <span className="pointer-events-none absolute bottom-2 left-3 text-[10px] text-gray-400">2 Adult</span>
+              <span className="pointer-events-none absolute bottom-2 left-3 text-[10px] text-gray-400">{travellers} Adult</span>
             </div>
           </div>
         </div>
@@ -202,9 +257,10 @@ export function SearchForm() {
         <div className="mt-6 flex justify-end">
           <button
             onClick={handleSearch}
-            className="w-full rounded-md bg-ovu-primary px-8 py-3 text-sm font-medium text-white transition-colors hover:bg-ovu-secondary focus:outline-none focus:ring-2 focus:ring-ovu-primary focus:ring-offset-2 sm:w-auto"
+            disabled={isSearching}
+            className="w-full cursor-pointer rounded-md bg-ovu-primary px-8 py-3 text-sm font-medium text-white transition-colors hover:bg-ovu-secondary focus:outline-none focus:ring-2 focus:ring-ovu-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
           >
-            {tripType === 'flight' ? 'Search Flights' : 'Search'}
+            {isSearching ? 'Searching...' : tripType === 'flight' ? 'Search Flights' : 'Search'}
           </button>
         </div>
       </div>

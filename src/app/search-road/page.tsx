@@ -1,9 +1,9 @@
 import { Header } from '@/components/layouts/Header';
 import { SearchForm } from '@/components/features/SearchForm';
-import { FlightResults } from '@/components/features/FlightResults';
+import { RoadResults } from '@/components/features/RoadResults';
 import { Countdown } from '@/components/ui/countdown';
 
-export default function SearchFlightsPage() {
+export default function SearchRoadPage() {
   return (
     <div className="min-h-screen bg-hero-bg">
       {/* Header */}
@@ -21,8 +21,8 @@ export default function SearchFlightsPage() {
       {/* Countdown Bar */}
       <Countdown />
 
-      {/* Flight Results */}
-      <FlightResults />
+      {/* Road Results */}
+      <RoadResults />
     </div>
   );
 }

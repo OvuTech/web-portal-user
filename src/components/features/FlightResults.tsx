@@ -1,171 +1,84 @@
 'use client';
 
-import Image from 'next/image';
-import { Plane } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { SearchResults } from './SearchResults';
+import type { SearchResponse, Route } from '@/lib/api/types';
 
-const flights = Array(10).fill({
-  airline: 'Air Peace',
-  flightNumber: 'P47130',
-  duration: '1hr 20min',
-  departure: {
-    date: '19:00 | 28 Sep 25',
-    airport: 'Lagos, Murtala Muhammed International Airport',
-  },
-  arrival: {
-    date: '19:00 | 28 Sep 25',
-    airport: 'Lagos, Murtala Muhammed International Airport',
-  },
-  travelTime: '1hrs 20mins',
-  stops: 'Non Stop',
-  price: '₦200,000',
-  seatsLeft: 4,
-  badges: {
-    cheapest: false,
-    fastest: false,
-  },
-});
+// Format API Route to SearchResultItem
+function formatRoute(route: Route, index: number) {
+  // Determine cheapest and fastest from price and duration
+  // This is a simple implementation - you might want to compare all results
+  return {
+    logo: route.provider_logo || '/airpeace.png',
+    name: route.provider,
+    code: route.flight_number || route.vehicle_number || 'N/A',
+    duration: route.duration,
+    stops: route.stops === 0 ? 'Non Stop' : `${route.stops} Stop${route.stops > 1 ? 's' : ''}`,
+    luggage: route.baggage?.carry_on,
+    bag: route.baggage?.checked,
+    departure: {
+      date: `${new Date(route.departure.time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })} | ${new Date(route.departure.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' })}`,
+      location: `${route.departure.location}${route.departure.terminal ? `, ${route.departure.terminal}` : ''}`,
+    },
+    arrival: {
+      date: `${new Date(route.arrival.time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })} | ${new Date(route.arrival.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' })}`,
+      location: `${route.arrival.location}${route.arrival.terminal ? `, ${route.arrival.terminal}` : ''}`,
+    },
+    travelTime: route.duration,
+    seatsLeft: route.available_seats || 0,
+    price: `${route.price.currency === 'NGN' ? '₦' : route.price.currency}${route.price.amount.toLocaleString()}`,
+    badges: index === 0 ? { cheapest: true, fastest: true } : undefined,
+  };
+}
+
+// Fallback mock data
+const mockFlightData = Array(10)
+  .fill(null)
+  .map((_, index) => ({
+    logo: '/airpeace.png',
+    name: 'Air Peace',
+    code: 'P47130',
+    duration: '1hr 20min',
+    stops: 'Non Stop',
+    luggage: '7kg',
+    bag: '15kg',
+    departure: {
+      date: '19:00 | 28 Sep 25',
+      location: 'Lagos, Murtala Muhammed International Airport',
+    },
+    arrival: {
+      date: '19:00 | 28 Sep 25',
+      location: 'Lagos, Murtala Muhammed International Airport',
+    },
+    travelTime: '1hrs 20mins',
+    seatsLeft: 4,
+    price: '₦200,000',
+    badges: index === 0 ? { cheapest: true, fastest: true } : undefined,
+  }));
 
 export function FlightResults() {
-  return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-12">
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900 md:text-xl">Search Results</h2>
-          <p className="text-sm text-gray-600">10 Flights found</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <button className="flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900">
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
-              />
-            </svg>
-            Filters
-          </button>
-          <button className="flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900">
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 4h18M3 8h18m-7 4h7"
-              />
-            </svg>
-            Cheapest
-          </button>
-        </div>
-      </div>
+  const [flightData, setFlightData] = useState(mockFlightData);
+  const [totalCount, setTotalCount] = useState(10);
 
-      {/* Flight Cards */}
-      <div className="space-y-4">
-        {flights.map((flight, index) => (
-          <div
-            key={index}
-            className={`relative flex flex-col gap-4 rounded-lg bg-white shadow-sm md:flex-row md:items-center md:gap-6 ${
-              index === 0 ? 'pb-6 pl-6 pr-6 pt-14' : 'p-6'
-            }`}
-          >
-            {/* Badges - Top Left */}
-            {index === 0 && (
-              <div className="absolute left-[15px] top-[16px] flex gap-2">
-                <span className="flex h-[25px] w-[81px] items-center justify-center rounded-[10px] bg-[#A8FFAC] p-[5px] text-xs font-medium text-gray-900">
-                  Cheapest
-                </span>
-                <span className="flex h-[25px] w-[81px] items-center justify-center rounded-[10px] bg-[#A9E4FF] p-[5px] text-xs font-medium text-gray-900">
-                  Fastest
-                </span>
-              </div>
-            )}
+  useEffect(() => {
+    // Get search results from sessionStorage
+    const searchResultsStr = sessionStorage.getItem('searchResults');
 
-            {/* Left Section - Airline Info */}
-            <div className="flex items-center gap-3 md:w-[200px]">
-              {/* Airline Logo */}
-              <div className="flex h-[72px] w-[78px] flex-shrink-0 items-center justify-center rounded-[5px] border border-gray-200 bg-white">
-                <Image
-                  src="/airpeace.png"
-                  alt="Air Peace"
-                  width={78}
-                  height={72}
-                  className="h-full w-full object-contain p-2"
-                />
-              </div>
+    if (searchResultsStr) {
+      try {
+        const searchResults: SearchResponse = JSON.parse(searchResultsStr);
 
-              {/* Airline Details */}
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold text-gray-900">{flight.airline}</p>
-                <p className="text-sm text-gray-500">{flight.flightNumber}</p>
-                <div className="mt-1 flex items-center gap-1.5 text-xs text-gray-500">
-                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  <span>{flight.duration}</span>
-                </div>
-              </div>
-            </div>
+        // Format routes for display
+        const formattedResults = searchResults.results.map((route, index) => formatRoute(route, index));
 
-            {/* Middle Section - Flight Route */}
-            <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center md:gap-6">
-              {/* Departure */}
-              <div className="w-full md:min-w-0 md:flex-1">
-                <div className="flex h-auto min-h-[90px] w-full items-start gap-2 rounded-[5px] bg-[#EBF4FF] p-3 md:h-[114px] md:w-[220px]">
-                  <Plane className="mt-1 h-4 w-4 flex-shrink-0 text-gray-600" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs text-gray-600">Departure</p>
-                    <p className="font-semibold text-gray-900">{flight.departure.date}</p>
-                    <p className="truncate text-xs text-gray-700">{flight.departure.airport}</p>
-                  </div>
-                </div>
-              </div>
+        setFlightData(formattedResults);
+        setTotalCount(searchResults.total_results);
+      } catch (error) {
+        console.error('Error parsing search results:', error);
+        // Keep using mock data
+      }
+    }
+  }, []);
 
-              {/* Travel Time */}
-              <div className="flex flex-shrink-0 flex-col items-center md:flex-col">
-                <p className="mb-2 text-xs text-gray-500">{flight.travelTime}</p>
-                <div className="relative h-[1px] w-16 md:w-[236px]">
-                  <div
-                    className="absolute left-0 top-0 h-full w-full border-t border-dashed border-gray-400"
-                    style={{ borderWidth: '1px' }}
-                  ></div>
-                  <div className="absolute left-0 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-gray-400"></div>
-                  <div className="absolute right-0 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-gray-400"></div>
-                </div>
-                <p className="mt-2 text-xs font-medium text-gray-700">{flight.stops}</p>
-              </div>
-
-              {/* Arrival */}
-              <div className="w-full md:min-w-0 md:flex-1">
-                <div className="flex h-auto min-h-[90px] w-full items-start gap-2 rounded-[5px] bg-[#EBF4FF] p-3 md:h-[114px] md:w-[220px]">
-                  <Plane className="mt-1 h-4 w-4 flex-shrink-0 rotate-90 text-gray-600" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs text-gray-600">Arrival</p>
-                    <p className="font-semibold text-gray-900">{flight.arrival.date}</p>
-                    <p className="truncate text-xs text-gray-700">{flight.arrival.airport}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Section - Price & Book */}
-            <div className="flex flex-shrink-0 items-center justify-between gap-4 border-t pt-4 md:w-[180px] md:flex-col md:items-center md:border-l md:border-t-0 md:pl-6 md:pt-0">
-              <div className="text-center">
-                <p className="text-xs text-red-500">{flight.seatsLeft} seats left</p>
-                <p className="text-2xl font-bold text-gray-900">{flight.price}</p>
-              </div>
-              <button className="whitespace-nowrap rounded-lg bg-ovu-primary px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ovu-secondary focus:outline-none focus:ring-2 focus:ring-ovu-primary focus:ring-offset-2">
-                Book Now
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  return <SearchResults type="flight" items={flightData} totalCount={totalCount} buttonText="Book Now" />;
 }

@@ -58,20 +58,20 @@ class ApiClient {
   }
 
   private getAuthToken(): string | null {
-    // Implement your token retrieval logic here
-    // For example, from localStorage, cookies, or your state management
+    // Get access token from localStorage
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('auth_token');
+      return localStorage.getItem('access_token');
     }
     return null;
   }
 
   private handleUnauthorized() {
-    // Implement your unauthorized handling logic
-    // For example, redirect to login page or refresh token
+    // Clear tokens on unauthorized access
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('auth_token');
-      // Redirect to login or dispatch logout action
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      // Optionally reload the page to reset auth state
+      // User will need to click login button in header to re-authenticate
     }
   }
 

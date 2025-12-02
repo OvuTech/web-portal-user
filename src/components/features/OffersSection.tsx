@@ -16,7 +16,7 @@ export function OffersSection() {
           <div className="relative mb-12">
             {/* Previous Button */}
             <button
-              className="absolute left-0 top-1/2 z-10 -translate-x-4 -translate-y-1/2 rounded-full bg-white p-2 shadow-lg hover:bg-gray-50"
+              className="absolute left-0 top-1/2 z-10 -translate-x-4 -translate-y-1/2 cursor-pointer rounded-full bg-white p-2 shadow-lg hover:bg-gray-50"
               aria-label="Previous"
             >
               <svg
@@ -56,7 +56,7 @@ export function OffersSection() {
 
             {/* Next Button */}
             <button
-              className="absolute right-0 top-1/2 z-10 -translate-y-1/2 translate-x-4 rounded-full bg-ovu-primary p-2 shadow-lg hover:bg-ovu-secondary"
+              className="absolute right-0 top-1/2 z-10 -translate-y-1/2 translate-x-4 cursor-pointer rounded-full bg-ovu-primary p-2 shadow-lg hover:bg-ovu-secondary"
               aria-label="Next"
             >
               <svg
@@ -90,7 +90,7 @@ export function OffersSection() {
             <button
               onClick={() => setActiveTab('flight')}
               className={cn(
-                'rounded-[10px] px-8 text-center py-4 w-fit text-sm font-medium transition-colors',
+                'cursor-pointer rounded-[10px] px-8 text-center py-4 w-fit text-sm font-medium transition-colors',
                 activeTab === 'flight'
                   ? 'bg-ovu-primary text-white'
                   : 'bg-white text-gray-700 hover:bg-gray-100'
@@ -101,7 +101,7 @@ export function OffersSection() {
             <button
               onClick={() => setActiveTab('road')}
               className={cn(
-                'rounded-[10px] px-8 text-center py-4 w-fit text-sm font-medium transition-colors',
+                'cursor-pointer rounded-[10px] px-8 text-center py-4 w-fit text-sm font-medium transition-colors',
                 activeTab === 'road'
                   ? 'bg-ovu-primary text-white'
                   : 'bg-white text-gray-700 hover:bg-gray-100'

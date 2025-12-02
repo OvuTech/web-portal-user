@@ -4,6 +4,8 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { useAuth } from '@/contexts/AuthContext';
+import { env } from '@/config/env';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -11,7 +13,82 @@ interface AuthModalProps {
 }
 
 export function AuthModal({ isOpen, onClose }: AuthModalProps) {
+  const { login, register } = useAuth();
+  const [step, setStep] = useState<'email' | 'password' | 'register'>('email');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleContinue = async () => {
+    if (step === 'email') {
+      // For now, we'll assume new users and go to register step
+      // In production, you'd check if user exists first
+      setStep('register');
+    }
+  };
+
+  const handleRegister = async () => {
+    if (!fullName || !password) {
+      setError('Please fill in all fields');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      await register(email, password, fullName);
+      onClose();
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Registration failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogin = async () => {
+    if (!password) {
+      setError('Please enter your password');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      await login(email, password);
+      onClose();
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Login failed. Please check your credentials.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetModal = () => {
+    setStep('email');
+    setEmail('');
+    setPassword('');
+    setFullName('');
+    setError('');
+  };
+
+  const handleClose = () => {
+    resetModal();
+    onClose();
+  };
+
+  const handleGoogleSignIn = () => {
+    // TODO: Google OAuth not yet implemented on backend
+    // Once backend implements /auth/google/authorize endpoint, uncomment below:
+    // const callbackUrl = `${env.appUrl}/auth/google/callback`;
+    // const googleAuthUrl = `${env.apiUrl}/auth/google/authorize?redirect_uri=${encodeURIComponent(callbackUrl)}`;
+    // window.location.href = googleAuthUrl;
+
+    setError('Google Sign-In is coming soon! Please use email/password for now.');
+  };
 
   if (!isOpen) return null;
 
@@ -20,8 +97,8 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
       <div className="relative flex w-full max-w-[1200px] overflow-hidden rounded-[20px] bg-white shadow-2xl">
         {/* Close Button */}
         <button
-          onClick={onClose}
-          className="absolute right-6 top-6 z-10 rounded-full p-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+          onClick={handleClose}
+          className="absolute right-6 top-6 z-10 cursor-pointer rounded-full p-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
         >
           <X className="h-6 w-6" />
         </button>
@@ -47,7 +124,14 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
               Manage your bookings with ease and enjoy members-only benefits
             </p>
 
-            {/* Email Input */}
+            {/* Error Message */}
+            {error && (
+              <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+                {error}
+              </div>
+            )}
+
+            {/* Email Input - Always visible */}
             <div className="mb-4">
               <label htmlFor="email" className="mb-2 block text-sm font-medium text-gray-900">
                 Email Address
@@ -59,13 +143,83 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Example@mail.com"
                 className="h-14 w-full rounded-lg border border-gray-300 px-4 text-base focus:border-ovu-primary focus:outline-none focus:ring-2 focus:ring-ovu-primary"
+                disabled={step !== 'email'}
               />
             </div>
 
-            {/* Continue Button */}
-            <button className="mb-6 w-full rounded-lg bg-ovu-primary py-4 text-base font-semibold text-white transition-colors hover:bg-ovu-secondary focus:outline-none focus:ring-2 focus:ring-ovu-primary focus:ring-offset-2">
-              Continue
+            {/* Full Name Input - Show on register step */}
+            {step === 'register' && (
+              <div className="mb-4">
+                <label htmlFor="fullName" className="mb-2 block text-sm font-medium text-gray-900">
+                  Full Name
+                </label>
+                <Input
+                  id="fullName"
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="John Doe"
+                  className="h-14 w-full rounded-lg border border-gray-300 px-4 text-base focus:border-ovu-primary focus:outline-none focus:ring-2 focus:ring-ovu-primary"
+                />
+              </div>
+            )}
+
+            {/* Password Input - Show on password or register step */}
+            {(step === 'password' || step === 'register') && (
+              <div className="mb-4">
+                <label htmlFor="password" className="mb-2 block text-sm font-medium text-gray-900">
+                  Password
+                </label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  className="h-14 w-full rounded-lg border border-gray-300 px-4 text-base focus:border-ovu-primary focus:outline-none focus:ring-2 focus:ring-ovu-primary"
+                />
+              </div>
+            )}
+
+            {/* Action Button */}
+            <button
+              onClick={step === 'email' ? handleContinue : step === 'register' ? handleRegister : handleLogin}
+              disabled={isLoading || (step === 'email' && !email)}
+              className="mb-6 w-full cursor-pointer rounded-lg bg-ovu-primary py-4 text-base font-semibold text-white transition-colors hover:bg-ovu-secondary focus:outline-none focus:ring-2 focus:ring-ovu-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isLoading ? 'Please wait...' : step === 'email' ? 'Continue' : step === 'register' ? 'Create Account' : 'Login'}
             </button>
+
+            {/* Back to Email */}
+            {step !== 'email' && (
+              <button
+                onClick={() => setStep('email')}
+                className="mb-4 w-full cursor-pointer text-sm text-gray-600 hover:text-gray-900"
+              >
+                ← Back to email
+              </button>
+            )}
+
+            {/* Switch between Login/Register */}
+            {step !== 'email' && (
+              <div className="mb-6 text-center text-sm">
+                {step === 'register' ? (
+                  <span>
+                    Already have an account?{' '}
+                    <button onClick={() => setStep('password')} className="cursor-pointer font-semibold text-ovu-primary hover:underline">
+                      Login
+                    </button>
+                  </span>
+                ) : (
+                  <span>
+                    Don't have an account?{' '}
+                    <button onClick={() => setStep('register')} className="cursor-pointer font-semibold text-ovu-primary hover:underline">
+                      Sign up
+                    </button>
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* Divider */}
             <div className="relative mb-6">
@@ -78,7 +232,11 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
             </div>
 
             {/* Google Sign In */}
-            <button className="mb-8 flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 py-4 text-base font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300">
+            <button
+              onClick={handleGoogleSignIn}
+              type="button"
+              className="mb-8 flex w-full cursor-pointer items-center justify-center gap-3 rounded-lg border border-gray-300 py-4 text-base font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300"
+            >
               <svg className="h-5 w-5" viewBox="0 0 24 24">
                 <path
                   fill="#4285F4"

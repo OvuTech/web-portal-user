@@ -39,14 +39,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
+      console.log('[AuthContext] Login attempt for:', email);
       const response = await authService.login({ email, password });
+
+      console.log('[AuthContext] Login response received');
+      console.log('[AuthContext] Has access_token:', !!response.access_token);
+      console.log('[AuthContext] Has refresh_token:', !!response.refresh_token);
+
       authService.setTokens(response.access_token, response.refresh_token);
+      console.log('[AuthContext] Tokens saved to localStorage');
 
       // Fetch user data after successful login
       const currentUser = await authService.getCurrentUser();
       setUser(currentUser);
+      console.log('[AuthContext] User data fetched:', currentUser.email);
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error('[AuthContext] Login failed:', error);
       throw error;
     }
   };

@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { bookingService } from '@/lib/api/bookings';
+import { useAuth } from '@/contexts/AuthContext';
 import type { CreateBookingRequest } from '@/lib/api/types';
 
 interface PassengerData {
@@ -18,6 +19,7 @@ interface PassengerData {
 
 export function FlightBooking() {
   const router = useRouter();
+  const { isAuthenticated } = useAuth();
   const [whatsappEnabled, setWhatsappEnabled] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -72,6 +74,12 @@ export function FlightBooking() {
   };
 
   const handleProceedToPayment = async () => {
+    // Check if user is authenticated first
+    if (!isAuthenticated) {
+      toast.error('Please login to continue with your booking');
+      return;
+    }
+
     if (!agreedToTerms) {
       toast.error('Please agree to the terms and conditions');
       return;

@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SeatSelection } from './SeatSelection';
 import { bookingService } from '@/lib/api/bookings';
+import { useAuth } from '@/contexts/AuthContext';
 import type { CreateBookingRequest, Route } from '@/lib/api/types';
 
 interface PassengerData {
@@ -26,6 +27,7 @@ interface PassengerData {
 
 export function RoadBooking() {
   const router = useRouter();
+  const { isAuthenticated } = useAuth();
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [showSeatSelection, setShowSeatSelection] = useState(true);
   const [selectedSeats, setSelectedSeats] = useState<number[]>([]);
@@ -185,6 +187,12 @@ export function RoadBooking() {
   };
 
   const handleProceedToPayment = async () => {
+    // Check if user is authenticated first
+    if (!isAuthenticated) {
+      toast.error('Please login to continue with your booking');
+      return;
+    }
+
     if (!agreedToTerms) {
       toast.error('Please agree to the terms and conditions');
       return;

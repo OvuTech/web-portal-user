@@ -58,17 +58,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || nameParts[0]; // If no last name, use first name
 
-      const response = await authService.register({
+      // Registration only returns user object, not tokens
+      await authService.register({
         email,
         password,
         first_name: firstName,
         last_name: lastName,
       });
-      authService.setTokens(response.access_token, response.refresh_token);
 
-      // Fetch user data after successful registration
-      const currentUser = await authService.getCurrentUser();
-      setUser(currentUser);
+      // Registration successful - user needs to login
+      // Don't set tokens or user here, let the UI handle success message
     } catch (error) {
       console.error('Registration failed:', error);
       throw error;

@@ -36,9 +36,10 @@ export interface User {
 export const authService = {
   /**
    * Register a new user
+   * Returns user object only, not tokens - user must login after registration
    */
-  async register(data: RegisterRequest): Promise<AuthResponse> {
-    return apiClient.post<AuthResponse>('/auth/register', data);
+  async register(data: RegisterRequest): Promise<User> {
+    return apiClient.post<User>('/auth/register', data);
   },
 
   /**

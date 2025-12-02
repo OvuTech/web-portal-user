@@ -20,6 +20,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [fullName, setFullName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   const handleContinue = async () => {
     if (step === 'email') {
@@ -37,10 +38,14 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
     setIsLoading(true);
     setError('');
+    setSuccessMessage('');
 
     try {
       await register(email, password, fullName);
-      onClose();
+      // Registration successful - show success message and switch to login
+      setSuccessMessage('Registration successful! Please login with your credentials.');
+      setStep('password');
+      setPassword(''); // Clear password field for login
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Registration failed. Please try again.');
     } finally {
@@ -73,6 +78,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setPassword('');
     setFullName('');
     setError('');
+    setSuccessMessage('');
   };
 
   const handleClose = () => {
@@ -123,6 +129,13 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
             <p className="mb-8 text-center text-sm text-gray-500 lg:text-base">
               Manage your bookings with ease and enjoy members-only benefits
             </p>
+
+            {/* Success Message */}
+            {successMessage && (
+              <div className="mb-4 rounded-lg bg-green-50 p-3 text-sm text-green-600">
+                {successMessage}
+              </div>
+            )}
 
             {/* Error Message */}
             {error && (

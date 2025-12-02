@@ -335,7 +335,7 @@ export default function PaymentPage() {
               </div>
 
               {/* Travellers */}
-              {(booking.passengers?.length > 0 || storedPassengers.length > 0) && (
+              {((booking.passengers && booking.passengers.length > 0) || storedPassengers.length > 0) && (
                 <div className="mb-4 border-t pt-4">
                   <h4 className="mb-2 font-semibold text-gray-900">Travellers</h4>
                   {booking.passengers && booking.passengers.length > 0

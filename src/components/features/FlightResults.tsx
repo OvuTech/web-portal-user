@@ -14,8 +14,8 @@ function formatRoute(route: Route, index: number) {
     code: route.flight_number || route.vehicle_number || 'N/A',
     duration: route.duration,
     stops: route.stops === 0 ? 'Non Stop' : `${route.stops} Stop${route.stops > 1 ? 's' : ''}`,
-    luggage: route.baggage?.carry_on,
-    bag: route.baggage?.checked,
+    luggage: route.baggage?.carry_on || 'N/A',
+    bag: route.baggage?.checked || 'N/A',
     departure: {
       date: `${new Date(route.departure.time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })} | ${new Date(route.departure.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' })}`,
       location: `${route.departure.location}${route.departure.terminal ? `, ${route.departure.terminal}` : ''}`,

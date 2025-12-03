@@ -70,7 +70,15 @@ export function SearchForm() {
 
       // Store results in sessionStorage to pass to results page
       sessionStorage.setItem('searchResults', JSON.stringify(response));
-      sessionStorage.setItem('searchParams', JSON.stringify(searchRequest));
+      
+      // Store search params with additional display info
+      const searchParamsWithType = {
+        ...searchRequest,
+        tripType: flightType, // 'one-way' or 'round-trip'
+        from: from,
+        to: to,
+      };
+      sessionStorage.setItem('searchParams', JSON.stringify(searchParamsWithType));
 
       // Store search start time for timer
       sessionStorage.setItem('searchStartTime', Date.now().toString());

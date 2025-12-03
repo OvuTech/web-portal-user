@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -89,9 +90,10 @@ export function SearchForm() {
       } else {
         router.push('/search-road');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Search failed:', error);
-      alert('Search failed. Please try again.');
+      const errorMessage = error.response?.data?.detail || error.response?.data?.error || error.message || 'Search failed. Please try again.';
+      toast.error(errorMessage);
     } finally {
       setIsSearching(false);
     }

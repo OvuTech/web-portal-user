@@ -76,8 +76,8 @@ export function SearchForm() {
       const searchParamsWithType = {
         ...searchRequest,
         tripType: flightType, // 'one-way' or 'round-trip'
-        from: from,
-        to: to,
+        from: origin,
+        to: destination,
       };
       sessionStorage.setItem('searchParams', JSON.stringify(searchParamsWithType));
 
